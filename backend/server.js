@@ -7,7 +7,31 @@ const path = require("path");
 const db = require("./db");
 
 const app = express();
-app.use(cors());
+
+// ✅ CORS Configuration — Allow Vercel frontend + Railway frontend + localhost for dev
+const allowedOrigins = [
+  "https://fresh-fold1.vercel.app",
+  "https://freshfold-production.up.railway.app",
+  "http://localhost:5000",
+  "http://localhost:3000",
+  "http://127.0.0.1:5000"
+];
+
+app.use(cors({
+  origin: function (origin, callback) {
+    // Allow requests with no origin (mobile apps, curl, Postman, same-origin)
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+    console.warn("⚠ CORS blocked request from:", origin);
+    return callback(new Error("Not allowed by CORS"));
+  },
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"],
+  credentials: true
+}));
+
 app.use(express.json());
 
 // ✅ Test Database Connection on start (with retry for Railway cold starts)
@@ -23,7 +47,6 @@ app.use(express.json());
       console.error(`❌ MySQL Connection Attempt ${i}/${maxRetries} Failed:`, err.message);
       if (i === maxRetries) {
         console.error("❌ All MySQL connection attempts failed. Server will start but DB queries may fail.");
-        // Don't process.exit(1) — let Railway keep the container alive for healthchecks
       } else {
         console.log(`⏳ Retrying in ${i * 2} seconds...`);
         await new Promise(r => setTimeout(r, i * 2000));
