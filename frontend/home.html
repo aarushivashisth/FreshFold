@@ -4,6 +4,14 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>FreshFold Laundry</title>
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-4PTTBWRGCW"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-4PTTBWRGCW');
+  </script>
   <style>
     body {
       margin: 0;
@@ -244,7 +252,7 @@
     <a href="services.html">Services</a>
     <a href="order-status.html">Order Status</a>
     <a href="feedback.html">Feedback</a>
-    <a href="login.html">Logout</a>
+    <a href="login.html" onclick="gtag('event', 'user_logout', { method: 'nav_link' })">Logout</a>
   </nav>
 </header>
 
@@ -253,7 +261,7 @@
   <section class="hero">
     <h1 id="welcomeMessage">Welcome</h1>
     <p>Laundry care for all seasons.</p>
-    <button onclick="window.location.href='services.html'">Book Now</button>
+    <button onclick="gtag('event', 'book_now_click', { source_page: 'home' }); window.location.href='services.html'">Book Now</button>
   </section>
 
   <!-- Services -->

@@ -4,6 +4,14 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>FreshFold | Our Services</title>
+  <!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-4PTTBWRGCW"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-4PTTBWRGCW');
+</script>
   <style>
     body {
       margin: 0;
@@ -306,7 +314,7 @@
     <a href="services.html">Services</a>
     <a href="order-status.html">Order Status</a>
     <a href="feedback.html">Feedback</a>
-    <a href="login.html">Logout</a>
+    <a href="login.html" onclick="gtag('event', 'user_logout', { method: 'nav_link' })">Logout</a>
   </nav>
 </header>
 
@@ -490,8 +498,29 @@ function generateReceipt() {
   }
 
   localStorage.setItem("freshFoldOrder", JSON.stringify(order));
+
+  // GA4: Track proceed to receipt
+  gtag('event', 'proceed_to_receipt', {
+    item_count: order.reduce((sum, item) => sum + item.qty, 0),
+    total_types: order.length
+  });
+
   window.location.href = "receipt.html";
 }
+
+// GA4: Track service selection when checkboxes are checked
+document.querySelectorAll('.services-checklist input[type="checkbox"]').forEach(cb => {
+  cb.addEventListener('change', function() {
+    if (this.checked) {
+      const clothType = this.closest('.card-content').id;
+      const serviceLabel = this.parentElement.textContent.trim();
+      gtag('event', 'service_selection', {
+        service_type: serviceLabel,
+        cloth_type: clothType
+      });
+    }
+  });
+});
 </script>
 
 </body>

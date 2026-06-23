@@ -4,7 +4,7 @@ const bcrypt = require("bcrypt");
 
 async function seed() {
   try {
-    const adminPass = "1234"; // change if you want
+    const adminPass = "12345"; // change if you want
     const hash = await bcrypt.hash(adminPass, 8);
 
     // only insert if not exists
@@ -15,7 +15,7 @@ async function seed() {
     }
 
     await db.query("INSERT INTO users (name,email,username,password,role) VALUES (?,?,?,?, 'admin')",
-      ["Admin", "admin@freshfold.com", "admin", hash]);
+      ["Admin", "admin@freshfold.com", "admin1", hash]);
 
     console.log("Admin user created: username=admin password=" + adminPass);
     process.exit(0);

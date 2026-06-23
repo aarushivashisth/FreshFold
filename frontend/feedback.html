@@ -4,6 +4,14 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>FreshFold | Feedback</title>
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-4PTTBWRGCW"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-4PTTBWRGCW');
+  </script>
   <style>
     * {
       margin: 0;
@@ -219,7 +227,7 @@
     <a href="services.html">Services</a>
     <a href="order-status.html">Order Status</a>
     <a href="feedback.html">Feedback</a>
-    <a href="login.html">Logout</a>
+    <a href="login.html" onclick="gtag('event', 'user_logout', { method: 'nav_link' })">Logout</a>
     </nav>
   </header>
 
@@ -300,6 +308,12 @@
     }
 
     alert("✅ Thank you for your feedback!");
+
+    // GA4: Track feedback submitted (after successful API response)
+    gtag('event', 'feedback_submitted', {
+      rating: parseInt(rating)
+    });
+
     document.getElementById('feedbackForm').reset();
     stars.forEach(s => s.classList.remove('active'));
     rating = 0;

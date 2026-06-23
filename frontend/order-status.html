@@ -4,6 +4,14 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>FreshFold | Track Your Order</title>
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-4PTTBWRGCW"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-4PTTBWRGCW');
+  </script>
   <style>
     * {
       margin: 0;
@@ -230,7 +238,7 @@
     <a href="services.html">Services</a>
     <a href="order-status.html">Order Status</a>
     <a href="feedback.html">Feedback</a>
-    <a href="login.html">Logout</a>
+    <a href="login.html" onclick="gtag('event', 'user_logout', { method: 'nav_link' })">Logout</a>
     </nav>
   </header>
 
@@ -283,6 +291,12 @@ async function loadOrderStatus() {
     <strong>Status:</strong> ${order.status}<br>
     <strong>Last Updated:</strong> ${new Date(order.updated_at).toLocaleString()}<br>
   `;
+
+  // GA4: Track order status viewed (after successful API load)
+  gtag('event', 'order_status_viewed', {
+    order_id: order.id,
+    order_status: order.status
+  });
 
   updateStatusUI(order.current_step);
 }

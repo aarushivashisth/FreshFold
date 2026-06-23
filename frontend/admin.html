@@ -4,6 +4,14 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>FreshFold | Admin Dashboard</title>
+  <!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-4PTTBWRGCW"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-4PTTBWRGCW');
+</script>
   <style>
     body {
       margin: 0;
@@ -284,6 +292,12 @@
 
   const data = await res.json();
   if (res.ok) {
+    // GA4: Track admin order status update (after successful API response)
+    gtag('event', 'admin_update_order_status', {
+      order_id: id,
+      new_status: newStatus
+    });
+
     alert(`✅ Order #${id} Updated`);
     loadOrders();
   } else {
@@ -310,6 +324,11 @@
 
     // LOGOUT
     function logout() {
+  // GA4: Track admin logout
+  gtag('event', 'admin_logout', {
+    method: 'button_click'
+  });
+
   localStorage.removeItem("userId");
   localStorage.removeItem("role");
   localStorage.removeItem("username");

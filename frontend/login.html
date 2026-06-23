@@ -4,6 +4,14 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>FreshFold - Login</title>
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-4PTTBWRGCW"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-4PTTBWRGCW');
+  </script>
   <style>
     body {
       margin: 0;
@@ -120,6 +128,12 @@
     localStorage.setItem("userId", data.user.id);
     localStorage.setItem("role", data.user.role);
     localStorage.setItem("username", data.user.username);
+
+    // GA4: Track login event (after successful API response)
+    gtag('event', data.user.role === 'admin' ? 'admin_login' : 'user_login', {
+      method: 'username_password',
+      user_role: data.user.role
+    });
 
     alert("✅ Login Successful!");
 

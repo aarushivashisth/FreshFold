@@ -4,6 +4,14 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>FreshFold - Sign Up</title>
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-4PTTBWRGCW"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-4PTTBWRGCW');
+  </script>
   <style>
     body {
       margin: 0;
@@ -123,6 +131,12 @@ async function registerUser() {
   }
 
   alert("✅ Account created successfully! Please login.");
+
+  // GA4: Track user registration (after successful API response)
+  gtag('event', 'user_registration', {
+    method: 'form_signup'
+  });
+
   window.location.href = "login.html";
   return false;
 }
