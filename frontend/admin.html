@@ -226,6 +226,9 @@
   <footer>© 2025 FreshFold Admin Dashboard</footer>
 
   <script>
+    // ✅ Change this to your deployed backend URL for production
+    const API_BASE_URL = "";
+
     // NAVIGATION
     function showTab(tab) {
       document.querySelectorAll("section").forEach(sec => sec.classList.remove("active"));
@@ -239,102 +242,117 @@
 
     // LOAD ORDERS
     async function loadOrders() {
-      const res = await fetch("http://localhost:5000/api/orders");
-      const orders = await res.json();
-      const table = document.getElementById("orderTable");
-      table.innerHTML = orders.map(o => `
-        <tr>
-          <td>${o.id}</td>
-          <td>${o.customer_name || 'N/A'}</td>
-          <td>${o.total_amount}</td>
-          <td>
-            <select id="st_${o.id}">
-              <option ${o.status=='placed'?'selected':''}>placed</option>
-              <option ${o.status=='pickup_scheduled'?'selected':''}>pickup_scheduled</option>
-              <option ${o.status=='picked'?'selected':''}>picked</option>
-              <option ${o.status=='in_process'?'selected':''}>in_process</option>
-              <option ${o.status=='ready'?'selected':''}>ready</option>
-              <option ${o.status=='out_for_delivery'?'selected':''}>out_for_delivery</option>
-              <option ${o.status=='delivered'?'selected':''}>delivered</option>
-              <option ${o.status=='cancelled'?'selected':''}>cancelled</option>
-            </select>
-          </td>
-          <td>${o.payment_mode}</td>
-          <td>${o.pickup_slot || 'N/A'}</td>
-          <td><button class="update-btn" onclick="updateStatus(${o.id})">Save</button></td>
-        </tr>
-      `).join("");
+      try {
+        const res = await fetch(API_BASE_URL + "/api/orders");
+        const orders = await res.json();
+        const table = document.getElementById("orderTable");
+        table.innerHTML = orders.map(o => `
+          <tr>
+            <td>${o.id}</td>
+            <td>${o.customer_name || 'N/A'}</td>
+            <td>${o.total_amount}</td>
+            <td>
+              <select id="st_${o.id}">
+                <option ${o.status=='placed'?'selected':''}>placed</option>
+                <option ${o.status=='pickup_scheduled'?'selected':''}>pickup_scheduled</option>
+                <option ${o.status=='picked'?'selected':''}>picked</option>
+                <option ${o.status=='in_process'?'selected':''}>in_process</option>
+                <option ${o.status=='ready'?'selected':''}>ready</option>
+                <option ${o.status=='out_for_delivery'?'selected':''}>out_for_delivery</option>
+                <option ${o.status=='delivered'?'selected':''}>delivered</option>
+                <option ${o.status=='cancelled'?'selected':''}>cancelled</option>
+              </select>
+            </td>
+            <td>${o.payment_mode}</td>
+            <td>${o.pickup_slot || 'N/A'}</td>
+            <td><button class="update-btn" onclick="updateStatus(${o.id})">Save</button></td>
+          </tr>
+        `).join("");
+      } catch (err) {
+        console.error("Load orders error:", err);
+        document.getElementById("orderTable").innerHTML =
+          '<tr><td colspan="7">❌ Unable to load orders. Check server connection.</td></tr>';
+      }
     }
 
     // UPDATE ORDER STATUS
     async function updateStatus(id) {
-  const newStatus = document.getElementById(`st_${id}`).value;
+      const newStatus = document.getElementById(`st_${id}`).value;
 
-  // map labels to step number
-  const statusSteps = {
-    placed: 0,
-    pickup_scheduled: 1,
-    picked: 2,
-    in_process: 3,
-    ready: 4,
-    out_for_delivery: 5,
-    delivered: 6
-  };
+      // map labels to step number
+      const statusSteps = {
+        placed: 0,
+        pickup_scheduled: 1,
+        picked: 2,
+        in_process: 3,
+        ready: 4,
+        out_for_delivery: 5,
+        delivered: 6
+      };
 
-  const res = await fetch(`http://localhost:5000/api/orders/update-status/${id}`, {
-    method: "PUT",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      status: newStatus,
-      step: statusSteps[newStatus] || 0
-    })
-  });
+      try {
+        const res = await fetch(API_BASE_URL + `/api/orders/update-status/${id}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            status: newStatus,
+            step: statusSteps[newStatus] || 0
+          })
+        });
 
-  const data = await res.json();
-  if (res.ok) {
-    // GA4: Track admin order status update (after successful API response)
-    gtag('event', 'admin_update_order_status', {
-      order_id: id,
-      new_status: newStatus
-    });
+        const data = await res.json();
+        if (res.ok) {
+          // GA4: Track admin order status update (after successful API response)
+          gtag('event', 'admin_update_order_status', {
+            order_id: id,
+            new_status: newStatus
+          });
 
-    alert(`✅ Order #${id} Updated`);
-    loadOrders();
-  } else {
-    alert("Failed");
-  }
-}
-
+          alert(`✅ Order #${id} Updated`);
+          loadOrders();
+        } else {
+          alert("Failed");
+        }
+      } catch (err) {
+        console.error("Update status error:", err);
+        alert("❌ Unable to connect to the server. Please try again later.");
+      }
+    }
 
     // LOAD FEEDBACKS
     async function loadFeedbacks() {
-      const res = await fetch("http://localhost:5000/api/feedback/all");
-      const feedbacks = await res.json();
-      const table = document.getElementById("feedbackTable");
-      table.innerHTML = feedbacks.map(f => `
-        <tr>
-          <td>${f.id}</td>
-          <td>${f.user_name || 'N/A'}</td>
-          <td>${f.order_id}</td>
-          <td>${f.message}</td>
-          <td>${f.rating || '-'}</td>
-        </tr>
-      `).join("");
+      try {
+        const res = await fetch(API_BASE_URL + "/api/feedback/all");
+        const feedbacks = await res.json();
+        const table = document.getElementById("feedbackTable");
+        table.innerHTML = feedbacks.map(f => `
+          <tr>
+            <td>${f.id}</td>
+            <td>${f.user_name || 'N/A'}</td>
+            <td>${f.order_id}</td>
+            <td>${f.message}</td>
+            <td>${f.rating || '-'}</td>
+          </tr>
+        `).join("");
+      } catch (err) {
+        console.error("Load feedbacks error:", err);
+        document.getElementById("feedbackTable").innerHTML =
+          '<tr><td colspan="5">❌ Unable to load feedbacks. Check server connection.</td></tr>';
+      }
     }
 
     // LOGOUT
     function logout() {
-  // GA4: Track admin logout
-  gtag('event', 'admin_logout', {
-    method: 'button_click'
-  });
+      // GA4: Track admin logout
+      gtag('event', 'admin_logout', {
+        method: 'button_click'
+      });
 
-  localStorage.removeItem("userId");
-  localStorage.removeItem("role");
-  localStorage.removeItem("username");
-  window.location.href = "login.html";
-}
-
+      localStorage.removeItem("userId");
+      localStorage.removeItem("role");
+      localStorage.removeItem("username");
+      window.location.href = "login.html";
+    }
 
     // INIT
     loadOrders();

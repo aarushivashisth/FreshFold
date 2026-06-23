@@ -70,6 +70,9 @@
 
 
 <script>
+// ✅ Change this to your deployed backend URL for production
+const API_BASE_URL = "";
+
 // ✅ Fetch Order From LocalStorage
 const order = JSON.parse(localStorage.getItem("freshFoldOrder")) || [];
 
@@ -99,12 +102,11 @@ order.forEach(item => {
     </tr>`;
 
   itemsForDB.push({
-  type: item.type,
-  qty: item.qty,
-  services: item.services,
-  rate: item.rate
-});
-
+    type: item.type,
+    qty: item.qty,
+    services: item.services,
+    rate: item.rate
+  });
 });
 
 const gst = subtotal * 0.05;
@@ -123,42 +125,46 @@ document.getElementById("totals").innerHTML = `
 
 // ✅ Place Order Backend API
 async function placeOrder() {
-
   const userId = localStorage.getItem("userId");
   if (!userId) {
     alert("⚠ Please log in first!");
     return window.location.href = "login.html";
   }
 
-  const res = await fetch("http://localhost:5000/api/orders/create", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      user_id: userId,
-      items: itemsForDB,
-      payment_mode: "COD",
-      pickup_slot: "Evening - 6PM"
-    })
-  });
+  try {
+    const res = await fetch(API_BASE_URL + "/api/orders/create", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        user_id: userId,
+        items: itemsForDB,
+        payment_mode: "COD",
+        pickup_slot: "Evening - 6PM"
+      })
+    });
 
-  const data = await res.json();
-  if (!res.ok) {
-    return alert(data.error || "Order failed!");
+    const data = await res.json();
+    if (!res.ok) {
+      return alert(data.error || "Order failed!");
+    }
+
+    alert("✅ Order Placed Successfully!");
+
+    // GA4: Track successful order placement
+    gtag('event', 'place_order', {
+      order_id: data.orderId,
+      total_amount: total,
+      payment_mode: 'COD'
+    });
+
+    localStorage.setItem("lastOrderId", data.orderId);
+    localStorage.removeItem("freshFoldOrder");
+
+    window.location.href = "order-status.html";
+  } catch (err) {
+    console.error("Order placement error:", err);
+    alert("❌ Unable to connect to the server. Please check your internet connection or try again later.");
   }
-
-  alert("✅ Order Placed Successfully!");
-
-  // GA4: Track successful order placement
-  gtag('event', 'place_order', {
-    order_id: data.orderId,
-    total_amount: total,
-    payment_mode: 'COD'
-  });
-
-  localStorage.setItem("lastOrderId", data.orderId);
-  localStorage.removeItem("freshFoldOrder");
-
-  window.location.href = "order-status.html";
 }
 
 </script>

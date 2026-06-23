@@ -267,6 +267,9 @@
   <footer>© 2025 FreshFold Laundry Services | All Rights Reserved</footer>
 
   <script>
+// ✅ Change this to your deployed backend URL for production
+const API_BASE_URL = "";
+
 async function loadOrderStatus() {
   const userId = localStorage.getItem("userId");
   if (!userId) {
@@ -275,30 +278,36 @@ async function loadOrderStatus() {
     return;
   }
 
-  const res = await fetch(`http://localhost:5000/api/orders/user/${userId}`);
-  const orders = await res.json();
+  try {
+    const res = await fetch(API_BASE_URL + `/api/orders/user/${userId}`);
+    const orders = await res.json();
 
-  if (!orders.length) {
+    if (!orders.length) {
+      document.getElementById("orderInfo").innerHTML = 
+        "<strong>No Orders Yet</strong><br>Place your first order!";
+      return;
+    }
+
+    const order = orders[orders.length - 1]; // last/latest order
+
+    document.getElementById("orderInfo").innerHTML = `
+      <strong>Order ID:</strong> #${order.id}<br>
+      <strong>Status:</strong> ${order.status}<br>
+      <strong>Last Updated:</strong> ${new Date(order.updated_at).toLocaleString()}<br>
+    `;
+
+    // GA4: Track order status viewed (after successful API load)
+    gtag('event', 'order_status_viewed', {
+      order_id: order.id,
+      order_status: order.status
+    });
+
+    updateStatusUI(order.current_step);
+  } catch (err) {
+    console.error("Order status error:", err);
     document.getElementById("orderInfo").innerHTML = 
-      "<strong>No Orders Yet</strong><br>Place your first order!";
-    return;
+      "<strong>❌ Unable to load order status</strong><br>Please check your connection and try again.";
   }
-
-  const order = orders[orders.length - 1]; // last/latest order
-
-  document.getElementById("orderInfo").innerHTML = `
-    <strong>Order ID:</strong> #${order.id}<br>
-    <strong>Status:</strong> ${order.status}<br>
-    <strong>Last Updated:</strong> ${new Date(order.updated_at).toLocaleString()}<br>
-  `;
-
-  // GA4: Track order status viewed (after successful API load)
-  gtag('event', 'order_status_viewed', {
-    order_id: order.id,
-    order_status: order.status
-  });
-
-  updateStatusUI(order.current_step);
 }
 
 function updateStatusUI(step) {

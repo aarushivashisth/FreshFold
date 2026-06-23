@@ -96,48 +96,64 @@
   <div class="signup-box">
     <h2>Create Account</h2>
     <form onsubmit="return registerUser()">
-      <input type="text" id="username" placeholder="Username">
-<input type="email" id="email" placeholder="Email">
-<input type="text" id="name" placeholder="Full Name">
-<input type="password" id="password" placeholder="Password">
-<input type="text" id="phone" placeholder="Phone">
-<input type="text" id="address" placeholder="Address">
-<button type="button" onclick="registerUser()">Sign Up</button>
-
+      <input type="text" id="username" placeholder="Username" required>
+      <input type="email" id="email" placeholder="Email" required>
+      <input type="text" id="name" placeholder="Full Name" required>
+      <input type="password" id="password" placeholder="Password" required minlength="4">
+      <input type="text" id="phone" placeholder="Phone">
+      <input type="text" id="address" placeholder="Address">
+      <button type="button" onclick="registerUser()">Sign Up</button>
     </form>
     <p>Already have an account? <a href="login.html">Login here</a></p>
   </div>
 
   <script>
+// ✅ Change this to your deployed backend URL for production
+// Example: const API_BASE_URL = "https://freshfold-backend.onrender.com";
+// Leave empty ("") when frontend is served by the same backend server
+const API_BASE_URL = "";
+
 async function registerUser() {
-  const name = document.getElementById("name").value;
-  const email = document.getElementById("email").value;
-  const username = document.getElementById("username").value;
+  const name = document.getElementById("name").value.trim();
+  const email = document.getElementById("email").value.trim();
+  const username = document.getElementById("username").value.trim();
   const password = document.getElementById("password").value;
-  const phone = document.getElementById("phone").value;
-  const address = document.getElementById("address").value;
+  const phone = document.getElementById("phone").value.trim();
+  const address = document.getElementById("address").value.trim();
 
-  const res = await fetch("http://localhost:5000/api/users/register", {
-    method: "POST",
-    headers: {"Content-Type": "application/json"},
-    body: JSON.stringify({ name, email, username, password, phone, address })
-  });
-
-  const data = await res.json();
-
-  if (!res.ok) {
-    alert(data.error || "Registration failed");
+  // Client-side validation
+  if (!name || !email || !username || !password) {
+    alert("⚠ Please fill in all required fields (Name, Email, Username, Password).");
     return false;
   }
 
-  alert("✅ Account created successfully! Please login.");
+  try {
+    const res = await fetch(API_BASE_URL + "/api/users/register", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name, email, username, password, phone, address })
+    });
 
-  // GA4: Track user registration (after successful API response)
-  gtag('event', 'user_registration', {
-    method: 'form_signup'
-  });
+    const data = await res.json();
 
-  window.location.href = "login.html";
+    if (!res.ok) {
+      alert(data.error || "Registration failed");
+      return false;
+    }
+
+    alert("✅ Account created successfully! Please login.");
+
+    // GA4: Track user registration (after successful API response)
+    gtag('event', 'user_registration', {
+      method: 'form_signup'
+    });
+
+    window.location.href = "login.html";
+  } catch (err) {
+    console.error("Registration error:", err);
+    alert("❌ Unable to connect to the server. Please check your internet connection or try again later.");
+  }
+
   return false;
 }
 </script>

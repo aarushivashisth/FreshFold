@@ -258,6 +258,9 @@
   </footer>
 
   <script>
+  // ✅ Change this to your deployed backend URL for production
+  const API_BASE_URL = "";
+
   // Star selection
   const stars = document.querySelectorAll('.stars span');
   let rating = 0;
@@ -289,34 +292,39 @@
       return;
     }
 
-    // ✅ Send feedback to server
-    const res = await fetch("http://localhost:5000/api/feedback/create", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        user_id: userId,
-        message,
-        rating
-      })
-    });
+    try {
+      // ✅ Send feedback to server
+      const res = await fetch(API_BASE_URL + "/api/feedback/create", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          user_id: userId,
+          message,
+          rating
+        })
+      });
 
-    const data = await res.json();
+      const data = await res.json();
 
-    if (!res.ok) {
-      alert(data.error || "Something went wrong");
-      return;
+      if (!res.ok) {
+        alert(data.error || "Something went wrong");
+        return;
+      }
+
+      alert("✅ Thank you for your feedback!");
+
+      // GA4: Track feedback submitted (after successful API response)
+      gtag('event', 'feedback_submitted', {
+        rating: parseInt(rating)
+      });
+
+      document.getElementById('feedbackForm').reset();
+      stars.forEach(s => s.classList.remove('active'));
+      rating = 0;
+    } catch (err) {
+      console.error("Feedback error:", err);
+      alert("❌ Unable to connect to the server. Please check your internet connection or try again later.");
     }
-
-    alert("✅ Thank you for your feedback!");
-
-    // GA4: Track feedback submitted (after successful API response)
-    gtag('event', 'feedback_submitted', {
-      rating: parseInt(rating)
-    });
-
-    document.getElementById('feedbackForm').reset();
-    stars.forEach(s => s.classList.remove('active'));
-    rating = 0;
   });
 </script>
 
