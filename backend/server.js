@@ -53,71 +53,78 @@ app.use(express.json());
     }
   }
 
+  // Create tables — each in its own try/catch so one failure doesn't block the rest
+  const run = async (label, sql) => {
+    try { await db.query(sql); console.log(`✅ ${label}`); }
+    catch (e) { console.error(`❌ ${label}:`, e.message); }
+  };
+
+  await run("users table", `CREATE TABLE IF NOT EXISTS users (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(200) NOT NULL,
+    email VARCHAR(200) NOT NULL UNIQUE,
+    username VARCHAR(100) NOT NULL UNIQUE,
+    password VARCHAR(255) NOT NULL,
+    address TEXT,
+    phone VARCHAR(30),
+    role ENUM('customer','admin') DEFAULT 'customer',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  )`);
+
+  await run("orders table", `CREATE TABLE IF NOT EXISTS orders (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    total_amount DECIMAL(10,2) NOT NULL,
+    payment_mode VARCHAR(30) NOT NULL,
+    payment_status VARCHAR(50) DEFAULT 'pending',
+    status VARCHAR(50) DEFAULT 'placed',
+    pickup_slot VARCHAR(100),
+    current_step INT DEFAULT 0,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+  )`);
+
+  await run("order_items table", `CREATE TABLE IF NOT EXISTS order_items (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    order_id INT NOT NULL,
+    item_type VARCHAR(100),
+    quantity INT,
+    services VARCHAR(255),
+    price_rate INT,
+    FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE
+  )`);
+
+  await run("feedback table", `CREATE TABLE IF NOT EXISTS feedback (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    order_id INT NULL,
+    rating INT NULL,
+    message TEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+  )`);
+
+  // Add order_id to feedback if it was created without it — ignore error if column already exists
+  try { await db.query(`ALTER TABLE feedback ADD COLUMN order_id INT NULL`); }
+  catch (e) { /* column already exists, fine */ }
+
+  // Auto-seed admin user
   try {
-    await db.query(`CREATE TABLE IF NOT EXISTS users (
-      id INT AUTO_INCREMENT PRIMARY KEY,
-      name VARCHAR(200) NOT NULL,
-      email VARCHAR(200) NOT NULL UNIQUE,
-      username VARCHAR(100) NOT NULL UNIQUE,
-      password VARCHAR(255) NOT NULL,
-      address TEXT,
-      phone VARCHAR(30),
-      role ENUM('customer','admin') DEFAULT 'customer',
-      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    )`);
-
-    await db.query(`CREATE TABLE IF NOT EXISTS orders (
-      id INT AUTO_INCREMENT PRIMARY KEY,
-      user_id INT NOT NULL,
-      total_amount DECIMAL(10,2) NOT NULL,
-      payment_mode VARCHAR(30) NOT NULL,
-      payment_status VARCHAR(50) DEFAULT 'pending',
-      status VARCHAR(50) DEFAULT 'placed',
-      pickup_slot VARCHAR(100),
-      current_step INT DEFAULT 0,
-      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-    )`);
-
-    await db.query(`CREATE TABLE IF NOT EXISTS order_items (
-      id INT AUTO_INCREMENT PRIMARY KEY,
-      order_id INT NOT NULL,
-      item_type VARCHAR(100),
-      quantity INT,
-      services VARCHAR(255),
-      price_rate INT,
-      FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE
-    )`);
-
-    await db.query(`CREATE TABLE IF NOT EXISTS feedback (
-      id INT AUTO_INCREMENT PRIMARY KEY,
-      user_id INT NOT NULL,
-      order_id INT NULL,
-      rating INT NULL,
-      message TEXT NOT NULL,
-      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-    )`);
-
-    // Add order_id column if feedback table already existed without it
-    await db.query(`ALTER TABLE feedback ADD COLUMN IF NOT EXISTS order_id INT NULL`);
-
-    console.log("✅ All tables ready!");
-
-    // Auto-seed admin user if not exists
+    const bcrypt = require("bcrypt");
     const [existing] = await db.query("SELECT id FROM users WHERE username='admin1'");
     if (!existing.length) {
-      const bcrypt = require("bcrypt");
       const hash = await bcrypt.hash("12345", 8);
       await db.query(
         "INSERT INTO users (name, email, username, password, role) VALUES (?,?,?,?,'admin')",
         ["Admin", "admin@freshfold.com", "admin1", hash]
       );
-      console.log("✅ Admin user created: username=admin1 password=12345");
+      console.log("✅ Admin created: username=admin1 password=12345");
+    } else {
+      console.log("✅ Admin already exists");
     }
-  } catch (err) {
-    console.error("❌ Setup failed:", err.message);
+  } catch (e) {
+    console.error("❌ Admin seed failed:", e.message);
   }
 })();
 
