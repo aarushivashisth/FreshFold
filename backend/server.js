@@ -33,7 +33,7 @@ app.use(cors({
 
 app.use(express.json());
 
-// ✅ Test Database Connection on start (with retry for Railway cold starts)
+// ✅ Connect to DB and auto-create tables on startup
 (async () => {
   const maxRetries = 5;
   for (let i = 1; i <= maxRetries; i++) {
@@ -41,16 +41,67 @@ app.use(express.json());
       const conn = await db.getConnection();
       console.log("✅ MySQL Connected!");
       conn.release();
-      return;
+      break;
     } catch (err) {
       console.error(`❌ MySQL Connection Attempt ${i}/${maxRetries} Failed:`, err.message);
       if (i === maxRetries) {
         console.error("❌ All MySQL connection attempts failed. Server will start but DB queries may fail.");
-      } else {
-        console.log(`⏳ Retrying in ${i * 2} seconds...`);
-        await new Promise(r => setTimeout(r, i * 2000));
+        return;
       }
+      console.log(`⏳ Retrying in ${i * 2} seconds...`);
+      await new Promise(r => setTimeout(r, i * 2000));
     }
+  }
+
+  try {
+    await db.query(`CREATE TABLE IF NOT EXISTS users (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      name VARCHAR(200) NOT NULL,
+      email VARCHAR(200) NOT NULL UNIQUE,
+      username VARCHAR(100) NOT NULL UNIQUE,
+      password VARCHAR(255) NOT NULL,
+      address TEXT,
+      phone VARCHAR(30),
+      role ENUM('customer','admin') DEFAULT 'customer',
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )`);
+
+    await db.query(`CREATE TABLE IF NOT EXISTS orders (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      user_id INT NOT NULL,
+      total_amount DECIMAL(10,2) NOT NULL,
+      payment_mode VARCHAR(30) NOT NULL,
+      payment_status VARCHAR(50) DEFAULT 'pending',
+      status VARCHAR(50) DEFAULT 'placed',
+      pickup_slot VARCHAR(100),
+      current_step INT DEFAULT 0,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    )`);
+
+    await db.query(`CREATE TABLE IF NOT EXISTS order_items (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      order_id INT NOT NULL,
+      item_type VARCHAR(100),
+      quantity INT,
+      services VARCHAR(255),
+      price_rate INT,
+      FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE
+    )`);
+
+    await db.query(`CREATE TABLE IF NOT EXISTS feedback (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      user_id INT NOT NULL,
+      rating INT NOT NULL,
+      message TEXT NOT NULL,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    )`);
+
+    console.log("✅ All tables ready!");
+  } catch (err) {
+    console.error("❌ Table creation failed:", err.message);
   }
 })();
 
