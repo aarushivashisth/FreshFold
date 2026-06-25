@@ -55,7 +55,7 @@ app.use(express.json());
 })();
 
 // ✅ Serve frontend files
-app.use(express.static(path.join(__dirname, "../frontend")));
+app.use(express.static(path.join(__dirname, "./frontend")));
 
 // ✅ Routes
 app.use("/api/users", require("./routes/userRoutes")(db));
@@ -69,7 +69,7 @@ app.get("/health", (req, res) => {
 
 // ✅ Fallback
 app.get("/", (req, res) => {
-  res.sendFile(path.join(__dirname, "../frontend/login.html"));
+  res.sendFile(path.join(__dirname, "./frontend/login.html"));
 });
 
 const PORT = process.env.PORT || 5000;
