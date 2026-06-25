@@ -93,15 +93,31 @@ app.use(express.json());
     await db.query(`CREATE TABLE IF NOT EXISTS feedback (
       id INT AUTO_INCREMENT PRIMARY KEY,
       user_id INT NOT NULL,
-      rating INT NOT NULL,
+      order_id INT NULL,
+      rating INT NULL,
       message TEXT NOT NULL,
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
       FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
     )`);
 
+    // Add order_id column if feedback table already existed without it
+    await db.query(`ALTER TABLE feedback ADD COLUMN IF NOT EXISTS order_id INT NULL`);
+
     console.log("✅ All tables ready!");
+
+    // Auto-seed admin user if not exists
+    const [existing] = await db.query("SELECT id FROM users WHERE username='admin1'");
+    if (!existing.length) {
+      const bcrypt = require("bcrypt");
+      const hash = await bcrypt.hash("12345", 8);
+      await db.query(
+        "INSERT INTO users (name, email, username, password, role) VALUES (?,?,?,?,'admin')",
+        ["Admin", "admin@freshfold.com", "admin1", hash]
+      );
+      console.log("✅ Admin user created: username=admin1 password=12345");
+    }
   } catch (err) {
-    console.error("❌ Table creation failed:", err.message);
+    console.error("❌ Setup failed:", err.message);
   }
 })();
 
