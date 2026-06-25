@@ -8,9 +8,8 @@ const db = require("./db");
 
 const app = express();
 
-// ✅ CORS Configuration — Allow Vercel frontend + Railway frontend + localhost for dev
+// ✅ CORS Configuration — Railway + localhost for dev
 const allowedOrigins = [
-  "https://fresh-fold1.vercel.app",
   "https://freshfold-production.up.railway.app",
   "http://localhost:5000",
   "http://localhost:3000",
